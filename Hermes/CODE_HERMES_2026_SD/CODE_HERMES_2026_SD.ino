@@ -135,9 +135,9 @@ int freq = 0;
 void setup() {
   Serial.begin(115200);
                               //initialisation vitesse port série entre esp32 et pc
-  initSerialTfminiPlus();                           // Initialisation des ports série et des objets tfminiPlus
-  softResetTfmini();                                // Reset des tfminiPlus
-  frameRateTfminiPlus();                            // paramétrage de la fréquence d'acquisition des tfminiPlus
+  //initSerialTfminiPlus();                           // Initialisation des ports série et des objets tfminiPlus
+  //softResetTfmini();                                // Reset des tfminiPlus
+  //frameRateTfminiPlus();                            // paramétrage de la fréquence d'acquisition des tfminiPlus
                               // initialisation des pins
   myservo.attach(pinServo);                         // déclaration objet myservo
   pinMode(pinTpntH,OUTPUT);                         // initialisation pin forward pont en H
@@ -157,7 +157,7 @@ void loop() {
   //litLaser('B');                   // appel lecture laser lateral D: AVD
   //litLaser('C');                 // appel lecture laser frontal G:FG
   //litLaser('D');                 // appel lecture laser frontal D:FD
-  litLaser('E');                   // appel lecture laser frontal C:FC
+  //litLaser('E');                   // appel lecture laser frontal C:FC
 compteur();
 ouEstil();
 if(FC<dstart){
@@ -169,7 +169,8 @@ else{
 }
 //debug();     
 Chargebuffer();                                 // appel fonction de chargement du buffer pour écriture sur SD
-SdEcrit(); 
+Serial.println("enregistrement en cours");
+delay(5000);
 }
 
 void Erreur(){
@@ -493,7 +494,15 @@ void SdSetup(){               // fonction initialisation carte SD
   if (SD.exists(filename)){
       SD.remove(filename);        // pour conserver les informations collectées lors du précédent lancement, il faut commenter cette ligne
   }
- 
+   // ⭐ OUVRIR LE FICHIER EN MODE ÉCRITURE
+  txtFile = SD.open(filename, FILE_WRITE);
+  
+  // Vérifier que le fichier est bien ouvert
+  if (!txtFile) {
+    Serial.println("Erreur : impossible d'ouvrir le fichier !");
+    while(1);  // bloquer si impossible d'ouvrir
+  }
+  Serial.println("Fichier créé et ouvert !");
   // Ajout ligne entête fichier
   txtFile.println();
   txtFile.println("Durée;Distance;PWM;CONSIGNE;VITESSE;laser_FC");
@@ -503,8 +512,9 @@ void SdSetup(){               // fonction initialisation carte SD
   void Chargebuffer(){                // Chargement des donénes dans le buffer pour écriture sur carte SD
 
     // ajout d'une nouvelle ligne dans le buffer
+    buffer = "";
     buffer += millis();
-    buffer += ";";
+    /*buffer += ";";
     buffer += cumDist;
     buffer += ";";
     buffer += PwmVIT;
@@ -514,20 +524,16 @@ void SdSetup(){               // fonction initialisation carte SD
     buffer += VIT;
     buffer += ";";
     buffer += FC;
+    */
     buffer += ";";
-    buffer += "\r\n";
+    //buffer += "\r\n";
+  
+    // Écrire directement sans buffer
+    txtFile.println(buffer);
+    txtFile.flush();
+    
+    Serial.println("Ligne écrite: " + buffer);
+  
   }
 
-  void SdEcrit(){                 // fonction écriture sur cate SD
 
-      // vérifie si la carte SD est disponible pour écrire des données sans blocage
-      // et si les données mises en mémoire tampon sont suffisantes pour la taille complète du bloc
-      unsigned int chunkSize = txtFile.availableForWrite();
-      if (chunkSize && buffer.length() >= chunkSize) {
-          txtFile.write(buffer.c_str(), chunkSize);
-          txtFile.flush();
-
-          // supprimer les données écrites du tampon
-          buffer.remove(0, chunkSize);
-      }
-  }
