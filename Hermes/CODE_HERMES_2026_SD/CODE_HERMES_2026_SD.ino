@@ -14,27 +14,35 @@ String buffer;
 
 /****** initialisation TFMiniPlus ******/
 #include <TFMPlus.h>
-TFMPlus tfmP1;         // Creation objet TFMini Avant Gauche
+TFMPlus tfmP1;        // Creation objet TFMini Avant Gauche
 TFMPlus tfmP2;        // Creation objet TFMini Avant Droit
 TFMPlus tfmP3;        // Creation objet TFMini Frontal Gauche
 TFMPlus tfmP4;        // Creation objet TFMini Frontal Droit
 TFMPlus tfmP5;        // Creation objet TFMini Frontal Central
                   
-bool idLA=false;          // flag laser a transmis données
+bool idLA=false;      // flag laser a transmis données
 bool idLB=false;
 bool idLC=false;
 bool idLD=false;
 bool idL5=false;
 
+                      // Acquisitions mesures capteurs laser
+int AVG;              //mesure du laser AV G
+int AVD;              //mesure du laser AV droit
+int FC;               //mesure du laser Frontal Centre                            
+int FG;               //mesure du laser frontal gauche
+int FD;               //mesure du laser frontal droite
+
+
 
 #include "Servo.h"
-Servo myservo;                       // déclaration objet servo
-const int pinServo=5;                // pin servo direction
-const int pinTpntH=12;                // pin pont en H forward 
-const int pinTpntHrev=11;             // pin pont en H reverse
+Servo myservo;               // déclaration objet servo
+const int pinServo=5;        // pin servo direction
+const int pinTpntH=12;       // pin pont en H forward 
+const int pinTpntHrev=11;    // pin pont en H reverse
                    
-const int pinOdo= 3;                   // pin odométrie
-long int HallMil = 1;                  // temps exact au passage devant le capteur 
+const int pinOdo= 3;         // pin odométrie
+long int HallMil = 1;        // temps exact au passage devant le capteur 
 int angleBraq=100;           // variable commande braquage
 
 
@@ -53,15 +61,17 @@ float nb_tour_sec;                                  // nbre de tour/s roue
 unsigned long curseTime = 10000;                        // Compteur de temps total course en millis (exempl 60 secondes = 60 000
 unsigned long lastCurseTime;                            // Temps début course  
                             // variables asservissement vitesse
+
 float VIT;                                              // vitesse calculée en KM/H
 float vcible;
-float VitInt;                                           // vitesse calculée en KM/H par interrupt
 int PwmVIT=0;                                 // Initialisation de la valeur du PWM pont en H
-int lastVIT=0;
+
+float dstart=150.0;
+float dend=60.0;
+
 float kp=5.8;
 float kd=2;
 int pid;
-float corrDebug;
 int pwmMult=2.0;
 int pwmconst=0;
 unsigned long tPrec_v=0;
@@ -72,51 +82,33 @@ float integrale_v=0.0;
 float Kp_v = 8.0;
 float Ki_v = 0.5;
 float Kd_v = 3.0;
-                          // variables utilisées pour le freinage
-bool okFrein=false;                               // indicateur condition necessitant freinage initialisé à false
-bool neutre = false;                              // indicateur état précédent commande pont en H 
-int minDist=300;                                   // distance mini capteur frontal déclenchant le freinage
-int PwmReverse=180;                                 // valeur du Pwm reverse
-int PwmFrein = PwmReverse;
 
-
-float dstart=150.0;
 float tprec=0.0;
 float errPrec=0.0;
 float erreur = 0.0;
-                      // Acquisitions mesures capteurs laser
-int AVG;                                         //mesure du laser AV G
-int AVD;          //mesure du laser AV droit
-int FC;           //mesure du laser Frontal Centre                            
-int FG;           //mesure du laser frontal gauche
-int FD;           //mesure du laser frontal droite
-int check;        //variable de contrôle checksum tampon données laser
-int i;
-
-                              // compteurs de temps
-long int t0;                                      // valeur micros() en début de boucle
-long int t1;                                     
+ 
+/****** calcul de la fréquence de la loop ******/   
+long int t1;                                            
 long int t2;
-long int tt0;                                     // valeur micros() en début acquisition données laser
-long int tt1;                                     // durée d'une acquisition laser
-long int topservo;
 int freq = 0;
 
 void setup() {
   Serial.begin(115200);
-                              //initialisation vitesse port série entre esp32 et pc
-  //initSerialTfminiPlus();                           // Initialisation des ports série et des objets tfminiPlus
-  //softResetTfmini();                                // Reset des tfminiPlus
-  //frameRateTfminiPlus();                            // paramétrage de la fréquence d'acquisition des tfminiPlus
-                              // initialisation des pins
+
+  //initSerialTfminiPlus();                         // Initialisation des ports série et des objets tfminiPlus
+  //softResetTfmini();                              // Reset des tfminiPlus
+  //frameRateTfminiPlus();                          // paramétrage de la fréquence d'acquisition des tfminiPlus
+                          
   myservo.attach(pinServo);                         // déclaration objet myservo
   pinMode(pinTpntH,OUTPUT);                         // initialisation pin forward pont en H
   pinMode(pinTpntHrev,OUTPUT);                      // initialisation pin reverse pont en H
-  pinMode(pinOdo,INPUT);                // initialisation pin signal hall
-  attachInterrupt(pinOdo,countInterrupt,FALLING);  // appel interruption pour mesurer le nombre de tours
-  movServo();                                     // mise à la position neutre du servo de direction
-  delay(6000);
+  pinMode(pinOdo,INPUT);                            // initialisation pin signal hall
+  attachInterrupt(pinOdo,countInterrupt,FALLING);   // appel interruption pour mesurer le nombre de tours
+
+  movServo();                                       // mise à la position neutre du servo de direction
+  delay(3000);
   SdSetup();                                        // Initialisation carte SD
+  debug();                                       
 }
 
 void loop() {
@@ -171,8 +163,8 @@ void compteur(){
 void ouEstil() {
   cumDist = (nbPignon)*3.1416*7.2/2;      // en cm, diam roue 7.2, 2 aimants,calcul cumul distance 
   
-  // Freinage a partir d'une distance parcourue
-  if (cumDist>10000){
+  // Freinage a partir d'une distance parcourue NOUVEAU!!!!!!!!!
+  if (cumDist>1000){
     while(1){
         analogWrite(pinTpntH,0);
         analogWrite(pinTpntHrev,0);
@@ -198,8 +190,7 @@ float computeSpeed(float dist){
 void needFrein(float vcible){
   unsigned long tdeb= millis();
   float vmin=6.0;
-  float dstart=150.0;
-  float dend=60.0;
+
 
   float err= vcible-VIT;
   unsigned long tnow=millis();
@@ -385,6 +376,10 @@ void frameRateTfminiPlus(){   // paramétrage de la fréquence d'acquisition des
 }                               
 
 void mesureFreqLaser(char ID){
+    // compteurs de temps
+    long int tt0;                                     // valeur micros() en début acquisition données laser
+    long int tt1;                                     // durée d'une acquisition laser
+
     tt1=micros()-tt0;
     //Serial.print(" FA : ");Serial.print(ID);Serial.print(" ");Serial.println(1000000/tt1);
     tt1=0;
