@@ -134,7 +134,6 @@ int freq = 0;
 
 void setup() {
   Serial.begin(115200);
-  Serial6.begin(115200); 
                               //initialisation vitesse port série entre esp32 et pc
   initSerialTfminiPlus();                           // Initialisation des ports série et des objets tfminiPlus
   softResetTfmini();                                // Reset des tfminiPlus
@@ -148,8 +147,6 @@ void setup() {
   movServo();                                     // mise à la position neutre du servo de direction
   delay(6000);
   SdSetup();                                        // Initialisation carte SD
-
-  Serial6.println("fin setup");
 }
 
 void loop() {
@@ -161,8 +158,6 @@ void loop() {
   //litLaser('C');                 // appel lecture laser frontal G:FG
   //litLaser('D');                 // appel lecture laser frontal D:FD
   litLaser('E');                   // appel lecture laser frontal C:FC
-Erreur();                          // appel fonction calcul erreur de trajectoire 
-//movServo();                        // appel fonction commande servo de direction
 compteur();
 ouEstil();
 if(FC<dstart){
@@ -178,14 +173,6 @@ SdEcrit();
 }
 
 void Erreur(){
-/*alpha=atan((FAV-FAR)/l)*180/3.14159;                  // calcul angle trajectoire véhicule
-float erreurAlpha=K1*(consigneAlpha-alpha) - KD1*((consigneAlpha-lastAlpha)-(consigneAlpha-alpha));
-float erreurDist = K2*(consigneD-FAV) - KD2*((consigneD-lastDist)-(consigneD-FAV));
-erreur= K1*(consigneAlpha-alpha)+ K2*(consigneD-FAV);   // erreur totale : erreur alpha + erreur distance
-//erreur= erreurAlpha + erreurDist;                       // erreur totale : erreur alpha + erreur distance
-angleBraq = (-1.07*erreur)+89.36;          //PWM pour braquage servo, fonction de loi de calibration servo
-lastDist = FAV;
-lastAlpha = alpha;*/
 erreur= 1.*(AVG-AVD);
 angleBraq=(-1.07*erreur)+100.; 
 //angleBraq=100.;
@@ -250,8 +237,6 @@ else
   analogWrite (pinTpntH,0);
   analogWrite(pinTpntHrev,-pid);
 }
-//if (abs(err)<seuil)
-//pid=0;
 }
 
 
@@ -279,8 +264,6 @@ void asservVITPID(float VIT, float vitesseConsigne) {
   commandePWM_v = alpha * commandePWM_v + (1 - alpha) * sortie;
   if(consi>0){
   PwmVIT = commandePWM_v;
-   //Serial.print("PwmVIT asservi  ");Serial.print(PwmVIT);
-  //PwmVIT = sortie;
   }else {
   PwmVIT = 0;
   }
@@ -292,45 +275,9 @@ void motor(){
  }
 
 void countInterrupt(){                // fonction appelée par l'attach interrupt
-
 nbPignon++;
-
 }
 
- 
-void debug(){
-  if (consi == 0) {
-    return;
-  }
-  if (millis() - lastMsg < 20) return;  // max 50Hz
-  lastMsg = millis();
-/*
-    Serial6.print(" A ");
-    Serial6.print(AVG);                             //affichage distance mesuré par le laser avant
-    Serial6.print(" B ");
-    Serial6.print(AVD);                             //affichage distance mesuré par le laser arrière
-    Serial6.print(" C ");
-    Serial6.print(FG);                             //affichage distance mesuré par le laser frontal gauche
-    Serial6.print(" D ");
-    Serial6.print(FD);                             //affichage distance mesuré par le laser frontal droite 
-    Serial6.print( " E ");
-    Serial6.println(FC);                             //affichage distance mesuré par le laser frontal centre,
-    */
-    Serial6.print("   Braquage:  ");Serial6.println(angleBraq);
-  Serial6.print("   Dist parcourue cm:  ");Serial6.println(cumDist);
-  //Serial6.print("   PwmVIT asservi  ");Serial6.print(PwmVIT);
-  Serial6.print("   VIT compteur: ");Serial6.println(VIT ); 
-  freq = 1000000/(t1- t2);
-  Serial6.print("   F loop  ");Serial6.println(freq);       // fréquence d'exécution de la loop
-
-  Serial6.print("FC: ");Serial6.println(FC);
-
-  Serial6.print("Vcible: ");Serial6.print(vcible);
-  Serial6.print("      VIT: ");Serial6.println(VIT);
-  Serial6.print("PID: ");Serial6.println(pid);
-
- }
- 
 
 void initSerialTfminiPlus(){      // Initialisation des ports série et des objets tfminiPlus
   Serial1.begin(115200); 
@@ -537,7 +484,7 @@ void litLaser(char car){     // Lecture des lasers
 
 void SdSetup(){               // fonction initialisation carte SD
   delay(1000);
-
+  Serial.println("configuration du SD ...");
   // initialisation de la carte SD
   if (!SD.begin(BUILTIN_SDCARD)) {
     Serial.println("Card failed, or not present");
