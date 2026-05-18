@@ -259,6 +259,27 @@ void countInterrupt(){                // fonction appelée par l'attach interrup
 }
 
 
+/**********************    DEBUG    **********************/  
+void debug(){
+  Serial.print(" A ");
+  Serial.print(AVG);                             //affichage distance mesuré par le laser avant
+  Serial.print(" B ");
+  Serial.print(AVD);                             //affichage distance mesuré par le laser arrière
+  Serial.print(" C ");
+  Serial.print(FG);                             //affichage distance mesuré par le laser frontal gauche
+  Serial.print(" D ");
+  Serial.print(FD);                             //affichage distance mesuré par le laser frontal droite 
+  Serial.print( " E ");
+  Serial.println(FC);                             //affichage distance mesuré par le laser frontal centre,
+  Serial.print("   Braquage °  ");Serial.print(angleBraq);
+  Serial.print("   Dist parcourue cm  ");Serial.print(cumDist);
+  //Serial.print("   PwmVIT asservi  ");Serial.print(PwmVIT);
+  Serial.println("   VIT compteur ");Serial.print(VIT ); 
+  freq = 1000000/(t2-t1);
+  Serial.print("   F loop  ");Serial.println(freq);       // fréquence d'exécution de la loop
+ }
+
+
 /**********************    PARTIE TFMiniPlus    **********************/ 
 
 void initSerialTfminiPlus(){      // Initialisation des ports série et des objets tfminiPlus
