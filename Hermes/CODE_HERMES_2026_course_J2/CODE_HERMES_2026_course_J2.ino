@@ -306,33 +306,33 @@ float Kd_v = 4;
 String ouestil() {
     // PARTIE 1: Vérifier transitions (if/else)
   if (etat_courant == D1) {
-    if (FC < 110) {
+    if (FC < 100) {
       etat_courant = U2;
       odo_debut_virage = cumDist;
     }
   }
 
   else if (etat_courant == U2) {
-    if( cumDist - odo_debut_virage > 300 && FC > 170){
+    if( cumDist - odo_debut_virage > 300 && FC > 190){
       etat_courant = V3;
       odo_debut_virage = cumDist;
     }
   }
 
   else if (etat_courant == V3) {
-    if( cumDist - odo_debut_virage > 200 && FC > 170){
+    if( cumDist - odo_debut_virage > 200 && FC > 190){
       etat_courant = V4;
       odo_debut_virage = cumDist;
     }
   }
   else if (etat_courant == V4) {
-    if( cumDist - odo_debut_virage > 200 && FC > 170){
+    if( cumDist - odo_debut_virage > 200 && FC > 190){
       etat_courant = V5;
       odo_debut_virage = cumDist;
     }
   }
   else if (etat_courant == V5) {
-    if( cumDist - odo_debut_virage > 200 && FC > 170 ){
+    if( cumDist - odo_debut_virage > 200 && FC > 190 ){
       etat_courant = U7;
       odo_debut_virage = cumDist;
     }
@@ -346,7 +346,7 @@ String ouestil() {
   }
   */
   else if (etat_courant == U7) {
-    if(cumDist - odo_debut_virage > 100 && FC > 170){
+    if(cumDist - odo_debut_virage > 100 && FC > 190){
       etat_courant = D1;
       odo_debut_virage = cumDist;
     }
