@@ -106,7 +106,8 @@ void setup() {
   pinMode(pinTpntHrev,OUTPUT);                      // initialisation pin reverse pont en H
   pinMode(pinOdo,INPUT);                            // initialisation pin signal hall
   attachInterrupt(pinOdo,countInterrupt,FALLING);   // appel interruption pour mesurer le nombre de tours
-  movServo();                                       // mise à la position neutre du servo de direction
+  myservo.write(angleBraq);
+
   delay(3000);
   SdSetup();                                        // Initialisation carte SD
   Serial.print("fin setup"); 
@@ -305,7 +306,7 @@ float Kd_v = 4;
 String ouestil() {
     // PARTIE 1: Vérifier transitions (if/else)
   if (etat_courant == D1) {
-    if (FC < 150) {
+    if (FC < 110) {
       etat_courant = U2;
       odo_debut_virage = cumDist;
     }
